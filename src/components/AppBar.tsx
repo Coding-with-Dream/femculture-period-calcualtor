@@ -1,9 +1,21 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function AppBar({ title }: { title: string }) {
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // Calculate days until next period (mock: based on 28-day cycle)
+  const daysUntilPeriod = 5;
+
+  const notifications = [
+    { id: 1, icon: 'water', color: '#FF69B4', title: 'Period Starting Soon', desc: `Your period is expected to start in ${daysUntilPeriod} days. Stock up on essentials!`, time: '2h ago', unread: true },
+    { id: 2, icon: 'sparkles', color: '#FF9800', title: 'Ovulation Window', desc: 'Your fertile window begins in 10 days. Plan accordingly.', time: '1d ago', unread: true },
+    { id: 3, icon: 'nutrition', color: '#4CAF50', title: 'Nutrition Tip', desc: 'Increase iron-rich foods during your luteal phase to prevent fatigue.', time: '2d ago', unread: false },
+    { id: 4, icon: 'fitness', color: '#2196F3', title: 'Fitness Reminder', desc: 'Light yoga is recommended during menstruation. Try a 15-min session!', time: '3d ago', unread: false },
+  ];
+
   if (title === 'Home') {
     const currentHour = new Date().getHours();
     let timeGreeting = "Good morning,";
@@ -26,11 +38,51 @@ export default function AppBar({ title }: { title: string }) {
               <Text style={styles.greeting}>Juliya!</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.bellContainer}>
+          <TouchableOpacity style={styles.bellContainer} onPress={() => setShowNotifications(true)}>
             <Ionicons name="notifications-outline" size={24} color="#2C3E50" />
             <View style={styles.notificationDot} />
           </TouchableOpacity>
         </View>
+
+        {/* Period Countdown Banner */}
+        <View style={styles.countdownBanner}>
+          <Ionicons name="water" size={16} color="#FF69B4" />
+          <Text style={styles.countdownText}>
+            Your period is expected in <Text style={styles.countdownBold}>{daysUntilPeriod} days</Text>
+          </Text>
+        </View>
+
+        {/* Notifications Modal */}
+        <Modal visible={showNotifications} animationType="slide" transparent onRequestClose={() => setShowNotifications(false)}>
+          <View style={styles.notifOverlay}>
+            <View style={styles.notifContent}>
+              <View style={styles.notifHeader}>
+                <Text style={styles.notifTitle}>Notifications</Text>
+                <TouchableOpacity onPress={() => setShowNotifications(false)}>
+                  <Ionicons name="close-circle" size={28} color="#DCDCDC" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {notifications.map(n => (
+                  <View key={n.id} style={[styles.notifCard, n.unread && styles.notifCardUnread]}>
+                    <View style={[styles.notifIconBox, { backgroundColor: n.color + '15' }]}>
+                      <Ionicons name={n.icon as any} size={22} color={n.color} />
+                    </View>
+                    <View style={styles.notifTextArea}>
+                      <View style={styles.notifTitleRow}>
+                        <Text style={styles.notifCardTitle}>{n.title}</Text>
+                        {n.unread && <View style={styles.unreadDot} />}
+                      </View>
+                      <Text style={styles.notifDesc}>{n.desc}</Text>
+                      <Text style={styles.notifTime}>{n.time}</Text>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     );
   }
@@ -104,6 +156,46 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#FFF',
   },
+
+  // Period Countdown Banner
+  countdownBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF0F5',
+    marginHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+  },
+  countdownText: {
+    fontSize: 14,
+    color: '#2C3E50',
+    fontWeight: '500',
+    marginLeft: 10,
+  },
+  countdownBold: {
+    fontWeight: '900',
+    color: '#FF69B4',
+  },
+
+  // Notifications Modal
+  notifOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  notifContent: { backgroundColor: '#FFF', borderTopLeftRadius: 35, borderTopRightRadius: 35, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 50, maxHeight: '75%' },
+  notifHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  notifTitle: { fontSize: 24, fontWeight: '900', color: '#2C3E50' },
+
+  notifCard: { flexDirection: 'row', paddingVertical: 16, paddingHorizontal: 10, borderRadius: 18, marginBottom: 8 },
+  notifCardUnread: { backgroundColor: '#FFF0F508' },
+  notifIconBox: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  notifTextArea: { flex: 1 },
+  notifTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  notifCardTitle: { fontSize: 16, fontWeight: '800', color: '#2C3E50', flex: 1 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF69B4', marginLeft: 8 },
+  notifDesc: { fontSize: 14, color: '#555', lineHeight: 20, fontWeight: '500', marginBottom: 6 },
+  notifTime: { fontSize: 12, color: '#B0B0B0', fontWeight: '600' },
+
   defaultContainer: {
     padding: 16,
     alignItems: 'center',

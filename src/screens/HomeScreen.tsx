@@ -95,10 +95,16 @@ export default function HomeScreen() {
       risk = { text: 'Fertile Window / High Chance', color: '#FF69B4', bg: '#FFF0F5', icon: 'flame' };
     }
 
-    return { cycleDay, phase, desc, risk };
+    return { cycleDay, phase, desc, risk, bloodDurationDays, fertileStart, fertileEnd };
   };
 
   const currentStats = calculatePhase(activeDateObj);
+
+  // Calculate graphic bar lengths
+  const fStartSegs = Math.max(0, currentStats.fertileStart - currentStats.bloodDurationDays);
+  const ovSegs = Math.max(0, currentStats.fertileEnd - currentStats.fertileStart + 1);
+  const lutealSegs = Math.max(0, cycleLength - currentStats.fertileEnd);
+  const markerPos = Math.min(100, Math.max(0, (currentStats.cycleDay / cycleLength) * 100));
 
   const [pickerModalMode, setPickerModalMode] = useState<"start" | "end" | null>(null);
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(new Date());
@@ -196,9 +202,6 @@ export default function HomeScreen() {
         </View>
 
         <BounceButton style={styles.cycleCard} onPress={() => setSetupVisible(true)}>
-          {currentStats.phase === 'Menstrual Phase' && (
-            <Image source={require('../../assets/menstruation.png')} style={styles.phaseArtwork} resizeMode="cover" />
-          )}
           <View style={styles.cardHeaderRow}>
             <Text style={styles.cyclePhaseTitle}>{currentStats.phase}</Text>
             <Ionicons name="options-outline" size={20} color="#B0B0B0" />
@@ -223,9 +226,20 @@ export default function HomeScreen() {
               <Text style={styles.logButtonText}>{isLoggedToday ? "Done" : "Log"}</Text>
             </BounceButton>
           </View>
+
+          {/* New Cycle Progress Graphic */}
+          <View style={styles.graphicContainer}>
+            <Text style={styles.graphicLabel}>Cycle Overview</Text>
+            <View style={styles.graphicBarContainer}>
+              <View style={[styles.graphSegment, { flex: currentStats.bloodDurationDays, backgroundColor: '#FF69B4' }]} />
+              <View style={[styles.graphSegment, { flex: fStartSegs, backgroundColor: '#F0F3F4' }]} />
+              <View style={[styles.graphSegment, { flex: ovSegs, backgroundColor: '#4FC3F7' }]} />
+              <View style={[styles.graphSegment, { flex: lutealSegs, backgroundColor: '#F0F3F4' }]} />
+              <View style={[styles.graphMarker, { left: `${markerPos}%` }]} />
+            </View>
+          </View>
         </BounceButton>
 
-        {/* --- MOVED BEAUTIFUL CARD --- */}
         <Text style={styles.sectionTitle}>Previous Cycle</Text>
         <BounceButton style={styles.premiumHistoryCard} onPress={() => setHistoryVisible(true)}>
           <View style={styles.premiumHistoryRow}>
@@ -234,13 +248,13 @@ export default function HomeScreen() {
               <Text style={styles.premiumHistoryDates}>{mockHistory[0].start} - {mockHistory[0].end}</Text>
             </View>
             <View style={styles.premiumHistoryBadge}>
-              <Text style={styles.premiumHistoryDays}>Length: {mockHistory[0].length}</Text>
+              <Text style={styles.premiumHistoryDays}>{mockHistory[0].length}</Text>
             </View>
           </View>
           <View style={styles.premiumHistoryFooter}>
-            <Ionicons name="sparkles" size={16} color="#FF69B4" />
+            <Ionicons name="time-outline" size={16} color="#FF69B4" />
             <Text style={styles.premiumHistoryFooterText}>Explore your exact dates & logs</Text>
-            <Ionicons name="arrow-forward" size={16} color="#E3F2FD" style={{ marginLeft: 'auto' }} />
+            <Ionicons name="arrow-forward" size={16} color="#A0A0A0" style={{ marginLeft: 'auto' }} />
           </View>
         </BounceButton>
 
@@ -398,7 +412,6 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* Cycle History Modal */}
       <Modal visible={isHistoryVisible} animationType="slide" presentationStyle="formSheet" onRequestClose={() => setHistoryVisible(false)}>
         <View style={styles.historyModalContainer}>
           <View style={styles.historyModalHeader}>
@@ -461,7 +474,6 @@ const styles = StyleSheet.create({
   dateNumText: { fontSize: 16, color: '#2C3E50', fontWeight: '800', },
   activeDateNumText: { color: '#FFF', },
   cycleCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 10, marginBottom: 20, },
-  phaseArtwork: { width: '100%', height: 160, borderRadius: 20, marginBottom: 20, overflow: 'hidden' },
   cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, },
   cyclePhaseTitle: { fontSize: 14, color: '#FF69B4', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1.2, },
   cycleInfoRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', },
@@ -473,14 +485,20 @@ const styles = StyleSheet.create({
   safeDayBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, marginTop: 12, alignSelf: 'flex-start', },
   safeDayText: { fontSize: 12, fontWeight: '800', marginLeft: 6, },
 
-  premiumHistoryCard: { backgroundColor: '#1A1A2E', borderRadius: 28, padding: 24, shadowColor: '#1A1A2E', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 12, marginBottom: 25 },
+  graphicContainer: { marginTop: 25, },
+  graphicLabel: { fontSize: 11, fontWeight: '800', color: '#B0B0B0', textTransform: 'uppercase', marginBottom: 12, letterSpacing: 1 },
+  graphicBarContainer: { height: 12, borderRadius: 6, flexDirection: 'row', overflow: 'hidden', position: 'relative' },
+  graphSegment: { height: '100%' },
+  graphMarker: { position: 'absolute', top: -3, width: 18, height: 18, borderRadius: 9, backgroundColor: '#2C3E50', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 3, borderWidth: 3, borderColor: '#FFF', marginLeft: -9 },
+
+  premiumHistoryCard: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 8, marginBottom: 25 },
   premiumHistoryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  premiumHistoryMonth: { fontSize: 20, fontWeight: '900', color: '#FFFFFF', marginBottom: 6, letterSpacing: 0.5 },
-  premiumHistoryDates: { fontSize: 14, color: '#A0A0A0', fontWeight: '600' },
-  premiumHistoryBadge: { backgroundColor: '#FF69B420', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderWidth: 1, borderColor: '#FF69B450' },
-  premiumHistoryDays: { color: '#FF69B4', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.8 },
-  premiumHistoryFooter: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 16 },
-  premiumHistoryFooterText: { fontSize: 14, color: '#DCDCDC', fontWeight: '600', marginLeft: 10 },
+  premiumHistoryMonth: { fontSize: 20, fontWeight: '900', color: '#2C3E50', marginBottom: 6, letterSpacing: 0.5 },
+  premiumHistoryDates: { fontSize: 14, color: '#7F8C8D', fontWeight: '600' },
+  premiumHistoryBadge: { backgroundColor: '#E3F2FD', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16 },
+  premiumHistoryDays: { color: '#2196F3', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.8 },
+  premiumHistoryFooter: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F0F3F4', paddingTop: 16 },
+  premiumHistoryFooterText: { fontSize: 14, color: '#A0A0A0', fontWeight: '600', marginLeft: 10 },
 
   affirmationCard: { backgroundColor: '#E3F2FD', borderRadius: 24, padding: 24, marginBottom: 25, position: 'relative', },
   quoteIcon: { position: 'absolute', top: 20, right: 20, opacity: 0.15, },
