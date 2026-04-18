@@ -1,10 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AppBar from '../components/AppBar';
 
 export default function ProfileScreen() {
+    const [isHistoryVisible, setHistoryVisible] = useState(false);
+
+    const mockHistory = [
+        { id: '1', month: 'March', start: 'Mar 10', end: 'Mar 14', length: '28 Days', bleed: '4 Days', symptoms: 'Cramps, Fatigue' },
+        { id: '2', month: 'February', start: 'Feb 11', end: 'Feb 15', length: '29 Days', bleed: '4 Days', symptoms: 'Headaches' },
+        { id: '3', month: 'January', start: 'Jan 13', end: 'Jan 18', length: '29 Days', bleed: '5 Days', symptoms: 'Bloating' },
+        { id: '4', month: 'December', start: 'Dec 15', end: 'Dec 20', length: '28 Days', bleed: '5 Days', symptoms: 'Acne' },
+        { id: '5', month: 'November', start: 'Nov 17', end: 'Nov 22', length: '30 Days', bleed: '5 Days', symptoms: 'Cramps' },
+    ];
+
     return (
         <SafeAreaView style={styles.container} edges={['right', 'left']}>
             <AppBar title="Profile" />
@@ -32,7 +42,7 @@ export default function ProfileScreen() {
                     </TouchableOpacity>
                     <View style={styles.divider} />
 
-                    <TouchableOpacity style={styles.menuRow}>
+                    <TouchableOpacity style={styles.menuRow} onPress={() => setHistoryVisible(true)}>
                         <View style={[styles.menuIconBox, { backgroundColor: '#E3F2FD' }]}>
                             <Ionicons name="calendar" size={22} color="#2196F3" />
                         </View>
@@ -62,6 +72,54 @@ export default function ProfileScreen() {
                 </View>
 
             </ScrollView>
+
+            {/* Cycle History Modal Full Screen Overlay */}
+            <Modal visible={isHistoryVisible} animationType="slide" presentationStyle="formSheet" onRequestClose={() => setHistoryVisible(false)}>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalHeader}>
+                        <TouchableOpacity onPress={() => setHistoryVisible(false)} style={styles.modalCloseBtn}>
+                            <Ionicons name="arrow-back" size={26} color="#2C3E50" />
+                        </TouchableOpacity>
+                        <Text style={styles.modalTitle}>Cycle History</Text>
+                        <View style={{ width: 26 }} />
+                    </View>
+
+                    <ScrollView contentContainerStyle={styles.historyScroll}>
+                        {mockHistory.map((item, index) => (
+                            <View key={item.id} style={styles.historyCard}>
+                                <View style={styles.historyCardHeader}>
+                                    <Text style={styles.historyMonth}>{item.month}</Text>
+                                    <View style={styles.historyBadge}>
+                                        <Text style={styles.historyBadgeText}>{item.length}</Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.historyDataRow}>
+                                    <View style={styles.historyDataCol}>
+                                        <Text style={styles.historyDataLabel}>Dates</Text>
+                                        <Text style={styles.historyDataValue}>{item.start} - {item.end}</Text>
+                                    </View>
+                                    <View style={styles.historyDataCol}>
+                                        <Text style={styles.historyDataLabel}>Bleeding</Text>
+                                        <Text style={styles.historyDataValue}>{item.bleed}</Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.historyFooter}>
+                                    <Ionicons name="pulse" size={16} color="#FF69B4" />
+                                    <Text style={styles.historySymptoms}>Symptoms: {item.symptoms}</Text>
+                                </View>
+                            </View>
+                        ))}
+
+                        <TouchableOpacity style={styles.exportDataBtn}>
+                            <Ionicons name="document-text" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                            <Text style={styles.exportDataText}>Export PDF for Doctor</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
+                </View>
+            </Modal>
+
         </SafeAreaView>
     );
 }
@@ -81,5 +139,25 @@ const styles = StyleSheet.create({
     menuRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
     menuIconBox: { width: 44, height: 44, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
     menuText: { flex: 1, fontSize: 16, fontWeight: '700', color: '#2C3E50' },
-    divider: { height: 1, backgroundColor: '#F0F3F4', marginLeft: 60, marginVertical: 4 }
+    divider: { height: 1, backgroundColor: '#F0F3F4', marginLeft: 60, marginVertical: 4 },
+
+    // History UI
+    modalContainer: { flex: 1, backgroundColor: '#FAFAFB' },
+    modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 20, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#F0F3F4' },
+    modalCloseBtn: { padding: 4 },
+    modalTitle: { fontSize: 20, fontWeight: '800', color: '#2C3E50' },
+    historyScroll: { paddingHorizontal: 20, paddingTop: 25, paddingBottom: 50 },
+    historyCard: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 4 },
+    historyCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+    historyMonth: { fontSize: 20, fontWeight: '900', color: '#2C3E50' },
+    historyBadge: { backgroundColor: '#E3F2FD', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+    historyBadgeText: { color: '#2196F3', fontWeight: '800', fontSize: 13 },
+    historyDataRow: { flexDirection: 'row', marginBottom: 15 },
+    historyDataCol: { flex: 1 },
+    historyDataLabel: { fontSize: 12, color: '#A0A0A0', fontWeight: '700', textTransform: 'uppercase', marginBottom: 2 },
+    historyDataValue: { fontSize: 16, color: '#333', fontWeight: '800' },
+    historyFooter: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF0F5', padding: 12, borderRadius: 12 },
+    historySymptoms: { fontSize: 13, color: '#FF69B4', fontWeight: '700', marginLeft: 8 },
+    exportDataBtn: { flexDirection: 'row', backgroundColor: '#2C3E50', alignItems: 'center', justifyContent: 'center', paddingVertical: 18, borderRadius: 24, marginTop: 15 },
+    exportDataText: { color: '#FFF', fontSize: 16, fontWeight: '800' }
 });

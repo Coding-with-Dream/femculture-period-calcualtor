@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, Dimensions, TouchableWithoutFeedback, Modal, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Animated, Dimensions, TouchableWithoutFeedback, Modal, TouchableOpacity, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppBar from '../components/AppBar';
 
 const { width } = Dimensions.get('window');
 
@@ -40,7 +41,6 @@ export default function HomeScreen() {
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [isLoggedToday, setIsLoggedToday] = useState(false);
 
-  // Math State
   const [isSetupVisible, setSetupVisible] = useState(false);
 
   const initStart = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -75,7 +75,6 @@ export default function HomeScreen() {
     }
 
     const bloodDurationDays = Math.max(1, Math.floor((endP.getTime() - lastP.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-
     const fertileStart = cycleLength - 17;
     const fertileEnd = cycleLength - 13;
 
@@ -101,7 +100,6 @@ export default function HomeScreen() {
 
   const currentStats = calculatePhase(activeDateObj);
 
-  // Inline Custom Calendar State
   const [pickerModalMode, setPickerModalMode] = useState<"start" | "end" | null>(null);
   const [calendarViewDate, setCalendarViewDate] = useState<Date>(new Date());
 
@@ -112,7 +110,6 @@ export default function HomeScreen() {
 
   const selectCalendarDate = (day: number) => {
     const d = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), day);
-    // Adjust logic to keep local string consistent
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     const dateStr = d.toISOString().split('T')[0];
 
@@ -152,7 +149,6 @@ export default function HomeScreen() {
         <View style={styles.calendarDaysGrid}>
           {blanks.map(b => <View key={`blank-${b}`} style={styles.calendarDayCell} />)}
           {days.map(d => {
-            // Build ISO to compare
             const compD = new Date(year, month, d);
             compD.setMinutes(compD.getMinutes() - compD.getTimezoneOffset());
             const compStr = compD.toISOString().split('T')[0];
@@ -169,8 +165,18 @@ export default function HomeScreen() {
     );
   };
 
+  const [isHistoryVisible, setHistoryVisible] = useState(false);
+  const mockHistory = [
+    { id: '1', month: 'March', start: 'Mar 10', end: 'Mar 14', length: '28 Days', bleed: '4 Days', symptoms: 'Cramps, Fatigue' },
+    { id: '2', month: 'February', start: 'Feb 11', end: 'Feb 15', length: '29 Days', bleed: '4 Days', symptoms: 'Headaches' },
+    { id: '3', month: 'January', start: 'Jan 13', end: 'Jan 18', length: '29 Days', bleed: '5 Days', symptoms: 'Bloating' },
+    { id: '4', month: 'December', start: 'Dec 15', end: 'Dec 20', length: '28 Days', bleed: '5 Days', symptoms: 'Acne' },
+    { id: '5', month: 'November', start: 'Nov 17', end: 'Nov 22', length: '30 Days', bleed: '5 Days', symptoms: 'Cramps' },
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={['right', 'left']}>
+      <AppBar title="Home" />
       <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
         <View style={styles.calendarStrip}>
@@ -190,6 +196,9 @@ export default function HomeScreen() {
         </View>
 
         <BounceButton style={styles.cycleCard} onPress={() => setSetupVisible(true)}>
+          {currentStats.phase === 'Menstrual Phase' && (
+            <Image source={require('../../assets/menstruation.png')} style={styles.phaseArtwork} resizeMode="cover" />
+          )}
           <View style={styles.cardHeaderRow}>
             <Text style={styles.cyclePhaseTitle}>{currentStats.phase}</Text>
             <Ionicons name="options-outline" size={20} color="#B0B0B0" />
@@ -213,6 +222,25 @@ export default function HomeScreen() {
               <Ionicons name={isLoggedToday ? "checkmark-circle" : "water"} size={24} color="#FFF" />
               <Text style={styles.logButtonText}>{isLoggedToday ? "Done" : "Log"}</Text>
             </BounceButton>
+          </View>
+        </BounceButton>
+
+        {/* --- MOVED BEAUTIFUL CARD --- */}
+        <Text style={styles.sectionTitle}>Previous Cycle</Text>
+        <BounceButton style={styles.premiumHistoryCard} onPress={() => setHistoryVisible(true)}>
+          <View style={styles.premiumHistoryRow}>
+            <View>
+              <Text style={styles.premiumHistoryMonth}>{mockHistory[0].month} Cycle</Text>
+              <Text style={styles.premiumHistoryDates}>{mockHistory[0].start} - {mockHistory[0].end}</Text>
+            </View>
+            <View style={styles.premiumHistoryBadge}>
+              <Text style={styles.premiumHistoryDays}>Length: {mockHistory[0].length}</Text>
+            </View>
+          </View>
+          <View style={styles.premiumHistoryFooter}>
+            <Ionicons name="sparkles" size={16} color="#FF69B4" />
+            <Text style={styles.premiumHistoryFooterText}>Explore your exact dates & logs</Text>
+            <Ionicons name="arrow-forward" size={16} color="#E3F2FD" style={{ marginLeft: 'auto' }} />
           </View>
         </BounceButton>
 
@@ -262,8 +290,12 @@ export default function HomeScreen() {
             <Ionicons name="pulse" size={28} color="#FF69B4" />
             <Text style={styles.actionText}>Symptoms</Text>
           </BounceButton>
+          <BounceButton style={styles.actionSquare} onPress={() => setHistoryVisible(true)}>
+            <Ionicons name="calendar-sharp" size={28} color="#2196F3" />
+            <Text style={styles.actionText}>Cycle History</Text>
+          </BounceButton>
           <BounceButton style={styles.actionSquare}>
-            <Ionicons name="chatbubbles" size={28} color="#2196F3" />
+            <Ionicons name="chatbubbles" size={28} color="#4CAF50" />
             <Text style={styles.actionText}>Community</Text>
           </BounceButton>
           <BounceButton style={styles.actionSquare}>
@@ -274,7 +306,6 @@ export default function HomeScreen() {
 
       </ScrollView>
 
-      {/* Edit Cycle Dates Modal with Visual Date Selector Overrides */}
       <Modal visible={isSetupVisible} animationType="fade" transparent={true} onRequestClose={() => { setSetupVisible(false); setPickerModalMode(null); }}>
         <View style={[styles.modalOverlay, { justifyContent: 'center' }]}>
           <View style={[styles.modalContent, { borderRadius: 30, paddingBottom: 40 }]}>
@@ -331,7 +362,6 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* Data Logging Modal */}
       <Modal visible={isLogModalVisible} animationType="slide" transparent={true} onRequestClose={() => setLogModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -368,6 +398,53 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
+      {/* Cycle History Modal */}
+      <Modal visible={isHistoryVisible} animationType="slide" presentationStyle="formSheet" onRequestClose={() => setHistoryVisible(false)}>
+        <View style={styles.historyModalContainer}>
+          <View style={styles.historyModalHeader}>
+            <TouchableOpacity onPress={() => setHistoryVisible(false)} style={styles.modalCloseBtn}>
+              <Ionicons name="arrow-back" size={26} color="#2C3E50" />
+            </TouchableOpacity>
+            <Text style={styles.historyModalTitle}>Cycle History</Text>
+            <View style={{ width: 26 }} />
+          </View>
+
+          <ScrollView contentContainerStyle={styles.historyScroll}>
+            {mockHistory.map((item) => (
+              <View key={item.id} style={styles.historyCard}>
+                <View style={styles.historyCardHeader}>
+                  <Text style={styles.historyMonth}>{item.month}</Text>
+                  <View style={styles.historyBadge}>
+                    <Text style={styles.historyBadgeText}>{item.length}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.historyDataRow}>
+                  <View style={styles.historyDataCol}>
+                    <Text style={styles.historyDataLabel}>Dates</Text>
+                    <Text style={styles.historyDataValue}>{item.start} - {item.end}</Text>
+                  </View>
+                  <View style={styles.historyDataCol}>
+                    <Text style={styles.historyDataLabel}>Bleeding</Text>
+                    <Text style={styles.historyDataValue}>{item.bleed}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.historyFooter}>
+                  <Ionicons name="pulse" size={16} color="#FF69B4" />
+                  <Text style={styles.historySymptoms}>Symptoms: {item.symptoms}</Text>
+                </View>
+              </View>
+            ))}
+
+            <TouchableOpacity style={styles.exportDataBtn}>
+              <Ionicons name="document-text" size={20} color="#FFF" style={{ marginRight: 8 }} />
+              <Text style={styles.exportDataText}>Export PDF for Doctor</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -384,6 +461,7 @@ const styles = StyleSheet.create({
   dateNumText: { fontSize: 16, color: '#2C3E50', fontWeight: '800', },
   activeDateNumText: { color: '#FFF', },
   cycleCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.05, shadowRadius: 15, elevation: 10, marginBottom: 20, },
+  phaseArtwork: { width: '100%', height: 160, borderRadius: 20, marginBottom: 20, overflow: 'hidden' },
   cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, },
   cyclePhaseTitle: { fontSize: 14, color: '#FF69B4', fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1.2, },
   cycleInfoRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', },
@@ -394,6 +472,16 @@ const styles = StyleSheet.create({
   logButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16, marginLeft: 6, },
   safeDayBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, marginTop: 12, alignSelf: 'flex-start', },
   safeDayText: { fontSize: 12, fontWeight: '800', marginLeft: 6, },
+
+  premiumHistoryCard: { backgroundColor: '#1A1A2E', borderRadius: 28, padding: 24, shadowColor: '#1A1A2E', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 12, marginBottom: 25 },
+  premiumHistoryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  premiumHistoryMonth: { fontSize: 20, fontWeight: '900', color: '#FFFFFF', marginBottom: 6, letterSpacing: 0.5 },
+  premiumHistoryDates: { fontSize: 14, color: '#A0A0A0', fontWeight: '600' },
+  premiumHistoryBadge: { backgroundColor: '#FF69B420', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderWidth: 1, borderColor: '#FF69B450' },
+  premiumHistoryDays: { color: '#FF69B4', fontWeight: '900', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.8 },
+  premiumHistoryFooter: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 16 },
+  premiumHistoryFooterText: { fontSize: 14, color: '#DCDCDC', fontWeight: '600', marginLeft: 10 },
+
   affirmationCard: { backgroundColor: '#E3F2FD', borderRadius: 24, padding: 24, marginBottom: 25, position: 'relative', },
   quoteIcon: { position: 'absolute', top: 20, right: 20, opacity: 0.15, },
   affirmationTitle: { color: '#1565C0', fontSize: 13, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, },
@@ -408,9 +496,11 @@ const styles = StyleSheet.create({
   lifestyleHeading: { fontSize: 15, fontWeight: '800', color: '#2C3E50', marginBottom: 4, },
   lifestyleSubtext: { fontSize: 13, color: '#7F8C8D', lineHeight: 18, },
   divider: { height: 1, backgroundColor: '#F0F3F4', marginVertical: 12, marginLeft: 63, },
-  actionsGrid: { flexDirection: 'row', justifyContent: 'space-between', },
-  actionSquare: { width: (width - 40 - 20) / 3, paddingVertical: 20, backgroundColor: '#FFFFFF', borderRadius: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 5, },
-  actionText: { marginTop: 12, fontSize: 12, fontWeight: '700', color: '#2C3E50', },
+
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', },
+  actionSquare: { width: (width - 40 - 15) / 2, paddingVertical: 20, backgroundColor: '#FFFFFF', borderRadius: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 5, marginBottom: 15 },
+  actionText: { marginTop: 12, fontSize: 14, fontWeight: '700', color: '#2C3E50', },
+
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end', },
   modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 35, borderTopRightRadius: 35, paddingHorizontal: 30, paddingTop: 30, paddingBottom: 50, shadowColor: '#000', shadowOffset: { width: 0, height: -5 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 20, },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25, },
@@ -427,8 +517,6 @@ const styles = StyleSheet.create({
   textInput: { backgroundColor: '#F0F3F4', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 16, fontSize: 18, fontWeight: '600', color: '#2C3E50', },
   fakeInputRow: { backgroundColor: '#F0F3F4', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   fakeInputText: { fontSize: 18, fontWeight: '600', color: '#2C3E50', },
-
-  // Custom Calendar Styles
   calendarContainer: { marginVertical: 10, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#F0F3F4', padding: 15 },
   calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   calendarMonthText: { fontSize: 16, fontWeight: '800', color: '#2C3E50' },
@@ -438,5 +526,24 @@ const styles = StyleSheet.create({
   calendarDayCell: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', marginVertical: 2 },
   calendarDayCellActive: { backgroundColor: '#FF69B4', borderRadius: 20, shadowColor: '#FF69B4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
   calendarDayNum: { fontSize: 15, fontWeight: '600', color: '#333' },
-  calendarDayNumActive: { color: '#FFF', fontWeight: '800' }
+  calendarDayNumActive: { color: '#FFF', fontWeight: '800' },
+
+  historyModalContainer: { flex: 1, backgroundColor: '#FAFAFB' },
+  historyModalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 20, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#F0F3F4' },
+  modalCloseBtn: { padding: 4 },
+  historyModalTitle: { fontSize: 20, fontWeight: '800', color: '#2C3E50' },
+  historyScroll: { paddingHorizontal: 20, paddingTop: 25, paddingBottom: 50 },
+  historyCard: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 4 },
+  historyCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  historyMonth: { fontSize: 20, fontWeight: '900', color: '#2C3E50' },
+  historyBadge: { backgroundColor: '#E3F2FD', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  historyBadgeText: { color: '#2196F3', fontWeight: '800', fontSize: 13 },
+  historyDataRow: { flexDirection: 'row', marginBottom: 15 },
+  historyDataCol: { flex: 1 },
+  historyDataLabel: { fontSize: 12, color: '#A0A0A0', fontWeight: '700', textTransform: 'uppercase', marginBottom: 2 },
+  historyDataValue: { fontSize: 16, color: '#333', fontWeight: '800' },
+  historyFooter: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF0F5', padding: 12, borderRadius: 12 },
+  historySymptoms: { fontSize: 13, color: '#FF69B4', fontWeight: '700', marginLeft: 8 },
+  exportDataBtn: { flexDirection: 'row', backgroundColor: '#2C3E50', alignItems: 'center', justifyContent: 'center', paddingVertical: 18, borderRadius: 24, marginTop: 15 },
+  exportDataText: { color: '#FFF', fontSize: 16, fontWeight: '800' }
 });
